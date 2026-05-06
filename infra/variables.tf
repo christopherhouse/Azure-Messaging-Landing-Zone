@@ -142,6 +142,42 @@ variable "log_analytics" {
 }
 
 ###############################################################################
+# Private DNS Zone (privatelink.servicebus.windows.net)
+#
+# Both Event Hubs and Service Bus private endpoints resolve through the SAME
+# zone — `privatelink.servicebus.windows.net` — so a single zone serves both
+# workloads. Either let this module create the zone (and link it to the VNet),
+# or supply `existing_resource_id` for a centrally-managed (e.g. hub) zone.
+###############################################################################
+
+variable "private_dns_zone_servicebus" {
+  description = "Private DNS zone (`privatelink.servicebus.windows.net`) used by Event Hub and Service Bus private endpoints. Create a new zone or reference an existing one by resource ID."
+  type = object({
+    create               = bool
+    existing_resource_id = optional(string)
+    # When existing_resource_id is supplied, set this to true to also manage a
+    # virtual network link from this module's VNet to the existing zone. Leave
+    # false (default) when the zone owner manages links centrally.
+    link_existing_to_vnet = optional(bool, false)
+    # Name of the virtual network link created on the zone. Only used when a
+    # link is being created (either with a new zone or link_existing_to_vnet=true).
+    vnet_link_name = optional(string)
+  })
+  default = {
+    create = false
+  }
+
+  validation {
+    condition = (
+      var.private_dns_zone_servicebus.create ||
+      var.private_dns_zone_servicebus.existing_resource_id != null ||
+      (!var.private_dns_zone_servicebus.create && var.private_dns_zone_servicebus.existing_resource_id == null)
+    )
+    error_message = "When private_dns_zone_servicebus.create = false and DNS integration is required, existing_resource_id must be provided."
+  }
+}
+
+###############################################################################
 # Event Hub Namespace
 ###############################################################################
 
