@@ -43,6 +43,16 @@ log_analytics = {
   retention_in_days = 30
 }
 
+# ---- Private DNS zone (shared by Event Hub + Service Bus PEs) ---------------
+# Both services resolve through `privatelink.servicebus.windows.net`.
+# To reuse a hub-managed zone instead, set:
+#   create               = false
+#   existing_resource_id = "/subscriptions/.../privateDnsZones/privatelink.servicebus.windows.net"
+#   link_existing_to_vnet = true   # only if this module should manage the spoke link
+private_dns_zone_servicebus = {
+  create = true
+}
+
 # ---- Messaging workloads ----------------------------------------------------
 event_hub = {
   deploy   = true

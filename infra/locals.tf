@@ -18,6 +18,21 @@ locals {
   deploy_event_hub     = var.event_hub.deploy
   deploy_service_bus   = var.service_bus.deploy
 
+  # Private DNS zone (shared by Event Hub + Service Bus PEs).
+  create_servicebus_dns_zone = var.private_dns_zone_servicebus.create
+  has_servicebus_dns_zone = (
+    var.private_dns_zone_servicebus.create ||
+    var.private_dns_zone_servicebus.existing_resource_id != null
+  )
+  # Link this module's VNet to the zone when:
+  #   * we created the zone (always), OR
+  #   * caller opted in via link_existing_to_vnet on an existing zone.
+  link_servicebus_dns_zone_to_vnet = (
+    local.has_servicebus_dns_zone &&
+    local.vnet_id != null &&
+    (local.create_servicebus_dns_zone || var.private_dns_zone_servicebus.link_existing_to_vnet)
+  )
+
   # Internal subnet key used inside the VNet module's subnets map when both
   # the VNet and the PE subnet are created together.
   pe_subnet_key = "pe"
@@ -60,6 +75,16 @@ locals {
     ? module.log_analytics[0].resource_id
     : var.log_analytics.existing_resource_id
   )
+
+  servicebus_dns_zone_id = (
+    local.create_servicebus_dns_zone
+    ? module.private_dns_zone_servicebus[0].resource_id
+    : var.private_dns_zone_servicebus.existing_resource_id
+  )
+
+  # Resource IDs handed to AVM modules' `private_dns_zone_resource_ids`.
+  # Empty list when no zone is wired up, so the PE has no zone group attached.
+  servicebus_dns_zone_ids = local.has_servicebus_dns_zone ? [local.servicebus_dns_zone_id] : []
 
   # Diagnostic settings map shared by Event Hub and Service Bus modules.
   # Empty when no Log Analytics workspace was supplied or created.

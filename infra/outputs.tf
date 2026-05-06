@@ -37,3 +37,8 @@ output "service_bus_namespace_id" {
   description = "Resource ID of the deployed Service Bus namespace, or null when not deployed."
   value       = local.deploy_service_bus ? module.service_bus_namespace[0].resource_id : null
 }
+
+output "servicebus_private_dns_zone_id" {
+  description = "Resource ID of the `privatelink.servicebus.windows.net` Private DNS zone in use (newly created or pre-existing). Null when no zone is wired up."
+  value       = local.has_servicebus_dns_zone ? local.servicebus_dns_zone_id : null
+}

@@ -114,6 +114,60 @@ module "log_analytics" {
 }
 
 ###############################################################################
+# Private DNS Zone — privatelink.servicebus.windows.net
+#
+# Shared by Event Hub and Service Bus private endpoints (both services use the
+# same `privatelink.servicebus.windows.net` zone). When `create = true`, the
+# zone is also linked to this module's VNet so PE A-records resolve correctly
+# from inside the spoke. When pointing at an existing (e.g. hub-managed) zone,
+# the link is opt-in via `link_existing_to_vnet`.
+###############################################################################
+
+module "private_dns_zone_servicebus" {
+  source  = "Azure/avm-res-network-privatednszone/azurerm"
+  version = "~> 0.5"
+  count   = local.create_servicebus_dns_zone ? 1 : 0
+
+  domain_name = "privatelink.servicebus.windows.net"
+  parent_id   = module.resource_group.resource_id
+  tags        = local.tags
+
+  virtual_network_links = local.link_servicebus_dns_zone_to_vnet ? {
+    spoke = {
+      name                 = coalesce(var.private_dns_zone_servicebus.vnet_link_name, "${var.workload_name}-${var.environment}-link")
+      virtual_network_id   = local.vnet_id
+      registration_enabled = false
+    }
+  } : {}
+
+  enable_telemetry = false
+}
+
+###############################################################################
+# Virtual network link to a pre-existing (e.g. hub) Private DNS Zone.
+#
+# Only used when the caller supplied an existing zone resource ID *and* opted
+# in to having this module manage the spoke link. The AVM zone module owns the
+# vnet-link submodule, so we call it directly against the existing zone.
+###############################################################################
+
+module "private_dns_zone_servicebus_existing_link" {
+  source  = "Azure/avm-res-network-privatednszone/azurerm//modules/private_dns_virtual_network_link"
+  version = "~> 0.5"
+  count = (
+    !local.create_servicebus_dns_zone &&
+    local.has_servicebus_dns_zone &&
+    local.link_servicebus_dns_zone_to_vnet
+  ) ? 1 : 0
+
+  name                 = coalesce(var.private_dns_zone_servicebus.vnet_link_name, "${var.workload_name}-${var.environment}-link")
+  parent_id            = var.private_dns_zone_servicebus.existing_resource_id
+  virtual_network_id   = local.vnet_id
+  registration_enabled = false
+  tags                 = local.tags
+}
+
+###############################################################################
 # Event Hub Namespace (conditional)
 #   - Standard or Premium SKU
 #   - Public network access disabled
@@ -137,17 +191,46 @@ module "event_hub_namespace" {
 
   private_endpoints = {
     primary = {
-      subnet_resource_id = local.pe_subnet_id
-      subresource_name   = "namespace"
-      # Private DNS zones are intentionally not managed by this module — wire
-      # them up via Azure Policy or a hub DNS module.
-      private_dns_zone_resource_ids = []
+      subnet_resource_id            = local.pe_subnet_id
+      subresource_name              = "namespace"
+      private_dns_zone_resource_ids = local.servicebus_dns_zone_ids
     }
   }
 
-  diagnostic_settings = local.diagnostic_settings
+  # NOTE: `diagnostic_settings` is intentionally NOT passed here.
+  # The avm-res-eventhub-namespace v0.1.0 module declares the input but does
+  # not actually create an `azurerm_monitor_diagnostic_setting` resource from
+  # it (no diag-settings file in the module). We manage it directly below
+  # via `azurerm_monitor_diagnostic_setting.event_hub_namespace` until a
+  # newer module version wires it up.
 
   enable_telemetry = false
+}
+
+###############################################################################
+# Event Hub Namespace — diagnostic settings (workaround)
+#
+# Manually authored because avm-res-eventhub-namespace v0.1.0 ignores its own
+# `diagnostic_settings` input. Mirrors what the Service Bus AVM module emits:
+# all log categories + AllMetrics, dedicated destination type.
+###############################################################################
+
+resource "azurerm_monitor_diagnostic_setting" "event_hub_namespace" {
+  count = (local.deploy_event_hub && local.has_log_analytics) ? 1 : 0
+
+  name                           = "to-law"
+  target_resource_id             = module.event_hub_namespace[0].resource_id
+  log_analytics_workspace_id     = local.log_analytics_id
+  log_analytics_destination_type = "Dedicated"
+
+  enabled_log {
+    category_group = "allLogs"
+  }
+
+  metric {
+    category = "AllMetrics"
+    enabled  = true
+  }
 }
 
 ###############################################################################
@@ -179,7 +262,7 @@ module "service_bus_namespace" {
   private_endpoints = {
     primary = {
       subnet_resource_id            = local.pe_subnet_id
-      private_dns_zone_resource_ids = []
+      private_dns_zone_resource_ids = local.servicebus_dns_zone_ids
     }
   }
 

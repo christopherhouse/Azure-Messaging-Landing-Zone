@@ -39,6 +39,13 @@ log_analytics = {
   retention_in_days = 30
 }
 
+# ---- Private DNS zone (shared by Event Hub + Service Bus PEs) ---------------
+# Both services use `privatelink.servicebus.windows.net`. Create here, or
+# point at a centrally-managed zone via existing_resource_id.
+private_dns_zone_servicebus = {
+  create = true
+}
+
 # ---- Messaging workloads ----------------------------------------------------
 event_hub = {
   deploy   = true
@@ -72,4 +79,10 @@ service_bus = {
 # log_analytics = {
 #   create               = false
 #   existing_resource_id = "/subscriptions/<sub>/resourceGroups/rg-obs/providers/Microsoft.OperationalInsights/workspaces/log-shared"
+# }
+# private_dns_zone_servicebus = {
+#   create                = false
+#   existing_resource_id  = "/subscriptions/<sub>/resourceGroups/rg-dns-hub/providers/Microsoft.Network/privateDnsZones/privatelink.servicebus.windows.net"
+#   link_existing_to_vnet = true   # only when this module should manage the spoke VNet link
+#   vnet_link_name        = "messaging-dev-link"
 # }
