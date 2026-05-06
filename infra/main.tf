@@ -197,9 +197,40 @@ module "event_hub_namespace" {
     }
   }
 
-  diagnostic_settings = local.diagnostic_settings
+  # NOTE: `diagnostic_settings` is intentionally NOT passed here.
+  # The avm-res-eventhub-namespace v0.1.0 module declares the input but does
+  # not actually create an `azurerm_monitor_diagnostic_setting` resource from
+  # it (no diag-settings file in the module). We manage it directly below
+  # via `azurerm_monitor_diagnostic_setting.event_hub_namespace` until a
+  # newer module version wires it up.
 
   enable_telemetry = false
+}
+
+###############################################################################
+# Event Hub Namespace — diagnostic settings (workaround)
+#
+# Manually authored because avm-res-eventhub-namespace v0.1.0 ignores its own
+# `diagnostic_settings` input. Mirrors what the Service Bus AVM module emits:
+# all log categories + AllMetrics, dedicated destination type.
+###############################################################################
+
+resource "azurerm_monitor_diagnostic_setting" "event_hub_namespace" {
+  count = (local.deploy_event_hub && local.has_log_analytics) ? 1 : 0
+
+  name                           = "to-law"
+  target_resource_id             = module.event_hub_namespace[0].resource_id
+  log_analytics_workspace_id     = local.log_analytics_id
+  log_analytics_destination_type = "Dedicated"
+
+  enabled_log {
+    category_group = "allLogs"
+  }
+
+  metric {
+    category = "AllMetrics"
+    enabled  = true
+  }
 }
 
 ###############################################################################
