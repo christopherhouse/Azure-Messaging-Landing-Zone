@@ -1,7 +1,7 @@
 ---
-mode: 'agent'
+agent: 'agent'
 description: 'Create a GitHub Actions workflow for Terraform with Entra ID OIDC authentication — no service principal secrets.'
-tools: ['codebase', 'fetch']
+tools: ['search', 'web', 'edit']
 ---
 
 # Create a Terraform GitHub Actions Workflow (Entra ID OIDC)

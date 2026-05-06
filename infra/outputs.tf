@@ -1,6 +1,11 @@
+output "resource_group_id" {
+  description = "Resource ID of the resource group containing net-new resources."
+  value       = module.resource_group.resource_id
+}
+
 output "resource_group_name" {
   description = "Name of the resource group containing net-new resources."
-  value       = var.resource_group_name
+  value       = module.resource_group.name
 }
 
 output "virtual_network_id" {
@@ -25,10 +30,10 @@ output "log_analytics_workspace_id" {
 
 output "event_hub_namespace_id" {
   description = "Resource ID of the deployed Event Hub namespace, or null when not deployed."
-  value       = null # TODO: local.deploy_event_hub ? module.event_hub_namespace[0].resource_id : null
+  value       = local.deploy_event_hub ? module.event_hub_namespace[0].resource_id : null
 }
 
 output "service_bus_namespace_id" {
   description = "Resource ID of the deployed Service Bus namespace, or null when not deployed."
-  value       = null # TODO: local.deploy_service_bus ? module.service_bus_namespace[0].resource_id : null
+  value       = local.deploy_service_bus ? module.service_bus_namespace[0].resource_id : null
 }
