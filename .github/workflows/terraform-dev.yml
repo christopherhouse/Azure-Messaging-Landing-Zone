@@ -13,6 +13,7 @@ on:
     paths:
       - 'infra/**'
       - '.github/workflows/terraform-dev.yml'
+  workflow_dispatch:
 
 permissions:
   id-token: write   # Required for OIDC
