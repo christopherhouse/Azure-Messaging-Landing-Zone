@@ -68,7 +68,7 @@ locals {
   # `for_each = var.diagnostic_settings` inside the AVM modules fails with
   # "Invalid for_each argument" because the map's keys would depend on a
   # value known only after apply (the workspace resource_id).
-  has_log_analytics   = local.create_log_analytics || var.log_analytics.existing_resource_id != null
+  has_log_analytics = local.create_log_analytics || var.log_analytics.existing_resource_id != null
   diagnostic_settings = local.has_log_analytics ? {
     to_law = {
       name                  = "to-law"
