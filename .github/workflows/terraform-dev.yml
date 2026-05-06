@@ -52,6 +52,9 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "~> 1.9"
+          # Disable the wrapper — it fails the step on any stderr output
+          # (e.g. "Releasing state lock...") even when terraform exits 0.
+          terraform_wrapper: false
 
       - name: Terraform Format Check
         run: terraform fmt -check -recursive
@@ -132,6 +135,7 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "~> 1.9"
+          terraform_wrapper: false
 
       - name: Terraform Init
         run: |
