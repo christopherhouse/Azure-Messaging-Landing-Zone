@@ -63,10 +63,16 @@ locals {
 
   # Diagnostic settings map shared by Event Hub and Service Bus modules.
   # Empty when no Log Analytics workspace was supplied or created.
-  diagnostic_settings = local.log_analytics_id == null ? {} : {
+  #
+  # IMPORTANT: the gate must be known at plan time, otherwise downstream
+  # `for_each = var.diagnostic_settings` inside the AVM modules fails with
+  # "Invalid for_each argument" because the map's keys would depend on a
+  # value known only after apply (the workspace resource_id).
+  has_log_analytics   = local.create_log_analytics || var.log_analytics.existing_resource_id != null
+  diagnostic_settings = local.has_log_analytics ? {
     to_law = {
       name                  = "to-law"
       workspace_resource_id = local.log_analytics_id
     }
-  }
+  } : {}
 }
