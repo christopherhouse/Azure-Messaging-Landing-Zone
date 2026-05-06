@@ -1,8 +1,14 @@
-# Azure Messaging Landing Zone
+# 📨 Azure Messaging Landing Zone
 
-This repository contains Terraform templates to deploy a landing zone for Azure Messaging services, including **Azure Service Bus**, **Azure Event Hub**, and **Azure Event Grid**. All infrastructure is managed with Terraform using [Azure Verified Modules (AVM)](https://azure.github.io/Azure-Verified-Modules/).
+> Terraform templates to deploy a production-ready landing zone for Azure Messaging services, including **Azure Service Bus**, **Azure Event Hub**, and **Azure Event Grid**. All infrastructure is managed with Terraform using [Azure Verified Modules (AVM)](https://azure.github.io/Azure-Verified-Modules/).
 
-## Repository Layout
+[![Terraform](https://img.shields.io/badge/Terraform-%3E%3D1.9-7B42BC?logo=terraform&logoColor=white)](https://developer.hashicorp.com/terraform)
+[![AVM](https://img.shields.io/badge/Azure%20Verified%20Modules-enabled-0078D4?logo=microsoft-azure&logoColor=white)](https://azure.github.io/Azure-Verified-Modules/)
+[![OIDC](https://img.shields.io/badge/Auth-OIDC%20%2F%20Entra%20ID-00B4D8?logo=microsoft&logoColor=white)](https://learn.microsoft.com/en-us/azure/active-directory/workload-identities/workload-identity-federation)
+
+---
+
+## 🗂️ Repository Layout
 
 ```
 infra/                    # Root Terraform module
@@ -21,7 +27,7 @@ infra/                    # Root Terraform module
   copilot-instructions.md
 ```
 
-## Local Development
+## 💻 Local Development
 
 1. Install [Terraform](https://developer.hashicorp.com/terraform/install) `>= 1.9` and the [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli).
 2. Sign in: `az login` and `az account set --subscription <subscription-id>`.
@@ -43,7 +49,7 @@ The backend uses `use_azuread_auth = true`, so Terraform authenticates to the st
 
 ---
 
-## CI/CD: GitHub Actions Workflow
+## 🚀 CI/CD: GitHub Actions Workflow
 
 The [terraform-dev.yml](.github/workflows/terraform-dev.yml) workflow plans and applies the `dev` environment using **Entra ID OIDC Workload Identity Federation** — no client secrets or storage account keys are stored in GitHub.
 
@@ -51,9 +57,9 @@ The [terraform-dev.yml](.github/workflows/terraform-dev.yml) workflow plans and 
 - **Pull request** to `main` (paths under `infra/**`) → runs `fmt`, `validate`, `plan`, and posts the plan as a PR comment.
 - **Push** to `main` (paths under `infra/**`) → runs plan, then `apply` (gated by the `dev` GitHub environment).
 
-### One-Time Setup
+### 🔧 One-Time Setup
 
-#### 1. Provision the Terraform state storage account
+#### ☁️ 1. Provision the Terraform state storage account
 
 In a subscription/resource group of your choice:
 
@@ -77,7 +83,7 @@ az storage container create `
 
 > `--allow-shared-key-access false` ensures only Entra ID identities (not access keys) can read/write state.
 
-#### 2. Create the Entra workload identity for GitHub Actions
+#### 🪪 2. Create the Entra workload identity for GitHub Actions
 
 Either an **App Registration** or a **User-Assigned Managed Identity** works. Example with an app registration:
 
@@ -111,7 +117,7 @@ Remove-Item $ficFile
 
 > Add additional federated credentials for `pull_request` and `ref:refs/heads/main` if you want plan jobs to authenticate without going through the `dev` environment gate. Subjects: `repo:<org>/<repo>:pull_request` and `repo:<org>/<repo>:ref:refs/heads/main`.
 
-#### 3. Grant Azure RBAC
+#### 🔐 3. Grant Azure RBAC
 
 The identity needs **two** role assignments:
 
@@ -132,7 +138,7 @@ az role assignment create --assignee-object-id $principalId --assignee-principal
   --role "Contributor" --scope "/subscriptions/$subId"
 ```
 
-#### 4. Configure the GitHub repository
+#### ⚙️ 4. Configure the GitHub repository
 
 **Settings → Environments → New environment → `dev`**
 - (Recommended) add required reviewers so `terraform apply` requires manual approval.
@@ -149,11 +155,11 @@ az role assignment create --assignee-object-id $principalId --assignee-principal
 | `TF_BACKEND_CONTAINER` | `tfstate` |
 | `TF_BACKEND_KEY` | State blob name (e.g. `messaging-dev.tfstate`) |
 
-#### 5. Provide the dev tfvars file
+#### 📄 5. Provide the dev tfvars file
 
 Commit a non-secret `infra/dev.tfvars` (or rename your existing tfvars) so the workflow can pass it via `-var-file`. Use [infra/terraform.tfvars.example](infra/terraform.tfvars.example) as the template. Never put secrets in tfvars — store them in Key Vault and reference them from Terraform.
 
-### Verify
+### ✅ Verify
 
 Open a PR that touches anything under `infra/`. The workflow should:
 1. Authenticate to Azure via OIDC.
@@ -164,18 +170,17 @@ After merging to `main`, the `terraform-apply` job runs (subject to the `dev` en
 
 ---
 
-## Standards
+## 📐 Standards
 
 See [.github/copilot-instructions.md](.github/copilot-instructions.md) for the full Terraform, AVM, naming, security, and GitHub Actions standards enforced in this repository.
 
 ---
 
-## Disclaimer
+## ⚠️ Disclaimer
 
 THIS CODE SAMPLE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
 
 This sample is not supported under any Microsoft standard support program or service. The sample is provided AS IS without warranty of any kind. Microsoft further disclaims all implied warranties, including, without limitation, any implied warranties of merchantability or fitness for a particular purpose.
 
 The entire risk arising out of the use or performance of the sample and documentation remains with you. In no event shall Microsoft, its authors, or anyone else involved in the creation, production, or delivery of the sample be liable for any damages whatsoever (including, without limitation, damages for loss of business profits, business interruption, loss of business information, or other pecuniary loss) arising out of the use of or inability to use the sample or documentation, even if Microsoft has been advised of the possibility of such damages.
-
 ---
