@@ -86,20 +86,27 @@ $app = az ad app create --display-name "gh-messaging-landing-zone" | ConvertFrom
 $sp  = az ad sp create --id $app.appId | ConvertFrom-Json
 ```
 
-Add a **federated credential** scoped to the `dev` environment in this repo:
+Add a **federated credential** scoped to the `dev` environment in this repo. PowerShell strips inner quotes when JSON is passed inline to `az`, so write the parameters to a temp file and use `@file` syntax:
 
 ```pwsh
 $repo = "<github-org>/Azure-Messaging-Landing-Zone"
 
+$fic = @{
+  name        = "github-dev-environment"
+  issuer      = "https://token.actions.githubusercontent.com"
+  subject     = "repo:${repo}:environment:dev"
+  description = "GitHub Actions - dev environment"
+  audiences   = @("api://AzureADTokenExchange")
+} | ConvertTo-Json -Compress
+
+$ficFile = New-TemporaryFile
+Set-Content -Path $ficFile -Value $fic -Encoding utf8
+
 az ad app federated-credential create `
   --id $app.appId `
-  --parameters (@{
-    name        = "github-dev-environment"
-    issuer      = "https://token.actions.githubusercontent.com"
-    subject     = "repo:$repo`:environment:dev"
-    description = "GitHub Actions - dev environment"
-    audiences   = @("api://AzureADTokenExchange")
-  } | ConvertTo-Json -Compress)
+  --parameters "@$ficFile"
+
+Remove-Item $ficFile
 ```
 
 > Add additional federated credentials for `pull_request` and `ref:refs/heads/main` if you want plan jobs to authenticate without going through the `dev` environment gate. Subjects: `repo:<org>/<repo>:pull_request` and `repo:<org>/<repo>:ref:refs/heads/main`.
@@ -140,6 +147,7 @@ az role assignment create --assignee-object-id $principalId --assignee-principal
 | `TF_BACKEND_RESOURCE_GROUP` | Resource group of the state storage account (e.g. `rg-tfstate-messaging`) |
 | `TF_BACKEND_STORAGE_ACCOUNT` | State storage account name |
 | `TF_BACKEND_CONTAINER` | `tfstate` |
+| `TF_BACKEND_KEY` | State blob name (e.g. `messaging-dev.tfstate`) |
 
 #### 5. Provide the dev tfvars file
 

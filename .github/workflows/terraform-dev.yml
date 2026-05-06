@@ -21,7 +21,7 @@ permissions:
 
 env:
   TF_WORKING_DIR: infra
-  TF_STATE_KEY: messaging-dev.tfstate
+  TF_STATE_KEY: ${{ vars.TF_BACKEND_KEY }}
   TF_VAR_FILE: dev.tfvars
 
 jobs:
