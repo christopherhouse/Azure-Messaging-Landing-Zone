@@ -21,7 +21,10 @@ permissions:
 
 env:
   TF_WORKING_DIR: infra
-  TF_STATE_KEY: ${{ vars.TF_BACKEND_KEY }}
+  # State file blob name. Falls back to a deterministic per-env key if the
+  # repo/environment variable isn't set, so `terraform init` never sees an
+  # empty blob name.
+  TF_STATE_KEY: ${{ vars.TF_STATE_KEY != '' && vars.TF_STATE_KEY || 'messaging-landing-zone.dev.tfstate' }}
   TF_VAR_FILE: dev.tfvars
 
 jobs:
