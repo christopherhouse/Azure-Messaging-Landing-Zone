@@ -1,7 +1,7 @@
 ---
-mode: 'agent'
+agent: 'agent'
 description: 'Scaffold a new Terraform module for an Azure resource using the correct Azure Verified Module (AVM).'
-tools: ['codebase', 'fetch', 'search']
+tools: ['search', 'web', 'edit']
 ---
 
 # Create a New AVM-Based Terraform Module

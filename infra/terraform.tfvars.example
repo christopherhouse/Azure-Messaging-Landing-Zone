@@ -1,0 +1,75 @@
+###############################################################################
+# Example tfvars — copy to terraform.tfvars (gitignored) and customize.
+###############################################################################
+
+location            = "eastus2"
+workload_name       = "messaging"
+environment         = "dev"
+resource_group_name = "rg-messaging-dev"
+
+tags = {
+  cost-center = "12345"
+  owner       = "platform-team"
+}
+
+# ---- Networking: create a fresh VNet + PE subnet ----------------------------
+virtual_network = {
+  create        = true
+  name          = "vnet-messaging-dev"
+  address_space = ["10.50.0.0/16"]
+}
+
+private_endpoint_subnet = {
+  create           = true
+  name             = "snet-pe-messaging-dev"
+  address_prefixes = ["10.50.1.0/24"]
+}
+
+# ---- Optional NSG on the PE subnet ------------------------------------------
+network_security_group = {
+  enabled = true
+  create  = true
+  name    = "nsg-pe-messaging-dev"
+}
+
+# ---- Log Analytics ----------------------------------------------------------
+log_analytics = {
+  create            = true
+  name              = "log-messaging-dev"
+  retention_in_days = 30
+}
+
+# ---- Messaging workloads ----------------------------------------------------
+event_hub = {
+  deploy   = true
+  name     = "evhns-messaging-dev"
+  sku      = "Standard"
+  capacity = 1
+}
+
+service_bus = {
+  deploy   = true
+  name     = "sb-messaging-dev"
+  capacity = 1
+}
+
+###############################################################################
+# Alternate example — reuse existing networking resources
+###############################################################################
+# virtual_network = {
+#   create               = false
+#   existing_resource_id = "/subscriptions/<sub>/resourceGroups/rg-net/providers/Microsoft.Network/virtualNetworks/vnet-shared"
+# }
+# private_endpoint_subnet = {
+#   create               = false
+#   existing_resource_id = "/subscriptions/<sub>/resourceGroups/rg-net/providers/Microsoft.Network/virtualNetworks/vnet-shared/subnets/snet-pe"
+# }
+# network_security_group = {
+#   enabled              = true
+#   create               = false
+#   existing_resource_id = "/subscriptions/<sub>/resourceGroups/rg-net/providers/Microsoft.Network/networkSecurityGroups/nsg-shared"
+# }
+# log_analytics = {
+#   create               = false
+#   existing_resource_id = "/subscriptions/<sub>/resourceGroups/rg-obs/providers/Microsoft.OperationalInsights/workspaces/log-shared"
+# }

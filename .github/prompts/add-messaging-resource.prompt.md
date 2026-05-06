@@ -1,7 +1,7 @@
 ---
-mode: 'agent'
+agent: 'agent'
 description: 'Add a new Azure messaging resource (Service Bus queue/topic, Event Hub, Event Grid subscription, etc.) to an existing Terraform module using AVM.'
-tools: ['codebase', 'fetch', 'search']
+tools: ['search', 'web', 'edit']
 ---
 
 # Add an Azure Messaging Resource
