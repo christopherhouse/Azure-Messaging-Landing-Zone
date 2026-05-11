@@ -5,13 +5,13 @@ on:
     branches:
       - main
     paths:
-      - 'infra/**'
+      - 'infra/azurerm/**'
       - '.github/workflows/terraform-dev.yml'
   pull_request:
     branches:
       - main
     paths:
-      - 'infra/**'
+      - 'infra/azurerm/**'
       - '.github/workflows/terraform-dev.yml'
   workflow_dispatch:
 
@@ -21,7 +21,7 @@ permissions:
   pull-requests: write  # Required to comment plan output on PRs
 
 env:
-  TF_WORKING_DIR: infra
+  TF_WORKING_DIR: infra/azurerm
   # State file blob name. Falls back to a deterministic per-env key if the
   # repo/environment variable isn't set, so `terraform init` never sees an
   # empty blob name.
