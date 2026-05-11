@@ -1,9 +1,13 @@
 # 📨 Azure Messaging Landing Zone
 
-> Terraform templates to deploy a production-ready landing zone for Azure Messaging services, including **Azure Service Bus**, **Azure Event Hub**, and **Azure Event Grid**. All infrastructure is managed with Terraform using [Azure Verified Modules (AVM)](https://azure.github.io/Azure-Verified-Modules/).
+> Terraform templates to deploy a production-ready landing zone for Azure Messaging services, including **Azure Service Bus**, **Azure Event Hub**, and **Azure Event Grid**.
+>
+> Two parallel implementations live side-by-side:
+>
+> - [`infra/azurerm/`](infra/azurerm) — **active** implementation using raw `azurerm_*` resources. Deployed by CI/CD.
+> - [`infra/avm/`](infra/avm) — **obsolete** implementation using [Azure Verified Modules (AVM)](https://azure.github.io/Azure-Verified-Modules/). Retained for reference; not deployed.
 
 [![Terraform](https://img.shields.io/badge/Terraform-%3E%3D1.9-7B42BC?logo=terraform&logoColor=white)](https://developer.hashicorp.com/terraform)
-[![AVM](https://img.shields.io/badge/Azure%20Verified%20Modules-enabled-0078D4?logo=microsoft-azure&logoColor=white)](https://azure.github.io/Azure-Verified-Modules/)
 [![OIDC](https://img.shields.io/badge/Auth-OIDC%20%2F%20Entra%20ID-00B4D8?logo=microsoft&logoColor=white)](https://learn.microsoft.com/en-us/azure/active-directory/workload-identities/workload-identity-federation)
 
 ---
@@ -11,18 +15,23 @@
 ## 🗂️ Repository Layout
 
 ```
-infra/                    # Root Terraform module
-  main.tf
-  providers.tf
-  versions.tf             # Backend + provider version pinning
-  variables.tf
-  outputs.tf
-  data.tf
-  locals.tf
-  terraform.tfvars.example
+infra/
+  azurerm/                # Active root module — raw azurerm resources
+    main.tf
+    providers.tf
+    versions.tf           # Backend + provider version pinning
+    variables.tf
+    outputs.tf
+    data.tf
+    locals.tf
+    dev.tfvars
+    terraform.tfvars.example
+  avm/                    # Obsolete root module — Azure Verified Modules (kept for reference)
+    main.tf
+    ...
 .github/
   workflows/
-    terraform-dev.yml     # CI/CD for the dev environment
+    terraform-dev.yml     # CI/CD for the dev environment (targets infra/azurerm)
   prompts/                # GitHub Copilot prompt files
   copilot-instructions.md
 ```
@@ -31,8 +40,8 @@ infra/                    # Root Terraform module
 
 1. Install [Terraform](https://developer.hashicorp.com/terraform/install) `>= 1.9` and the [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli).
 2. Sign in: `az login` and `az account set --subscription <subscription-id>`.
-3. Copy [infra/terraform.tfvars.example](infra/terraform.tfvars.example) to `infra/dev.tfvars` (or `terraform.tfvars`) and fill in values.
-4. From the `infra/` directory:
+3. Copy [infra/azurerm/terraform.tfvars.example](infra/azurerm/terraform.tfvars.example) to `infra/azurerm/dev.tfvars` (or `terraform.tfvars`) and fill in values.
+4. From the `infra/azurerm/` directory:
    ```pwsh
    terraform init `
      -backend-config="resource_group_name=<state-rg>" `
@@ -54,8 +63,8 @@ The backend uses `use_azuread_auth = true`, so Terraform authenticates to the st
 The [terraform-dev.yml](.github/workflows/terraform-dev.yml) workflow plans and applies the `dev` environment using **Entra ID OIDC Workload Identity Federation** — no client secrets or storage account keys are stored in GitHub.
 
 **Triggers:**
-- **Pull request** to `main` (paths under `infra/**`) → runs `fmt`, `validate`, `plan`, and posts the plan as a PR comment.
-- **Push** to `main` (paths under `infra/**`) → runs plan, then `apply` (gated by the `dev` GitHub environment).
+- **Pull request** to `main` (paths under `infra/azurerm/**`) → runs `fmt`, `validate`, `plan`, and posts the plan as a PR comment.
+- **Push** to `main` (paths under `infra/azurerm/**`) → runs plan, then `apply` (gated by the `dev` GitHub environment).
 
 ### 🔧 One-Time Setup
 
