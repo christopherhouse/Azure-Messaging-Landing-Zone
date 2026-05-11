@@ -1,11 +1,11 @@
 output "resource_group_id" {
   description = "Resource ID of the resource group containing net-new resources."
-  value       = azurerm_resource_group.this.id
+  value       = module.resource_group.id
 }
 
 output "resource_group_name" {
   description = "Name of the resource group containing net-new resources."
-  value       = azurerm_resource_group.this.name
+  value       = module.resource_group.name
 }
 
 output "virtual_network_id" {
@@ -25,17 +25,17 @@ output "network_security_group_id" {
 
 output "log_analytics_workspace_id" {
   description = "Resource ID of the Log Analytics Workspace receiving diagnostics, or null when not configured."
-  value       = local.log_analytics_id
+  value       = local.has_log_analytics ? local.log_analytics_id : null
 }
 
 output "event_hub_namespace_id" {
   description = "Resource ID of the deployed Event Hub namespace, or null when not deployed."
-  value       = local.deploy_event_hub ? azurerm_eventhub_namespace.this[0].id : null
+  value       = local.deploy_event_hub ? module.event_hub[0].namespace_id : null
 }
 
 output "service_bus_namespace_id" {
   description = "Resource ID of the deployed Service Bus namespace, or null when not deployed."
-  value       = local.deploy_service_bus ? azurerm_servicebus_namespace.this[0].id : null
+  value       = local.deploy_service_bus ? module.service_bus[0].namespace_id : null
 }
 
 output "servicebus_private_dns_zone_id" {
